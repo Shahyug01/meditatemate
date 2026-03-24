@@ -7,43 +7,35 @@ const app = express();
 
 /* ===== MIDDLEWARE ===== */
 app.use(cors({
-origin: "*"
+  origin: "*"
 }));
 
 app.use(express.json());
+
+/* ===== ROOT ROUTE ===== */
+app.get("/", (req, res) => {
+  res.send("🚀 MeditateMate API Running");
+});
 
 /* ===== ROUTES ===== */
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/mood", require("./routes/moodRoutes"));
 app.use("/api/session", require("./routes/sessionRoutes"));
 
-/* ===== ROOT TEST ROUTE ===== */
-app.get("/", (req,res)=>{
-res.send("MeditateMate API Running 🚀");
-});
-
-/* ===== DATABASE CONNECTION ===== */
-const startServer = async ()=>{
-
-try{
-
-await mongoose.connect(process.env.MONGO_URI);
-
-console.log("✅ MongoDB Connected");
-
+/* ===== DATABASE + SERVER START ===== */
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, ()=>{
-console.log(`🚀 Server running on port ${PORT}`);
+mongoose.connect(process.env.MONGO_URI)
+.then(() => {
+  console.log("✅ MongoDB Connected");
+
+  app.listen(PORT, () => {
+    console.log("🚀 Server running on port " + PORT);
+  });
+
+})
+.catch((err) => {
+  console.log("❌ MongoDB Connection Failed");
+  console.log(err);
+  process.exit(1); // VERY IMPORTANT for Render
 });
-
-}catch(err){
-
-console.log("❌ MongoDB Connection Failed");
-console.log(err);
-
-}
-
-};
-
-startServer();
