@@ -26,7 +26,9 @@ onChange={e=>setMood(e.target.value)}>
 <option>Sad</option>
 </select>
 
-<button className="btn" onClick={submit}>Save Mood</button>
+<button className="primary-btn" onClick={submit}>
+  Save Mood
+</button>
 
 </div>
 );

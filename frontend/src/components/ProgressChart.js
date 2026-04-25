@@ -1,52 +1,68 @@
-import {
-LineChart,
-Line,
-XAxis,
-YAxis,
-Tooltip,
-CartesianGrid
-} from "recharts";
+export default function ProgressChart({ sessions = [] }) {
 
-export default function ProgressChart({ sessions }) {
-
-if (!sessions || sessions.length === 0) {
-return <p>No progress data yet</p>;
+if (!sessions.length) {
+return <p style={{opacity:0.6}}>No meditation progress yet</p>;
 }
 
-const data = sessions.map(s => ({
-date: new Date(s.createdAt).toLocaleDateString(),
-duration: s.duration
-}));
+const total = sessions.reduce(
+(sum,s)=> sum + Number(s.duration),
+0
+);
+
+const avg = Math.round(total / sessions.length);
 
 return (
 
+<div>
+
+<h3 style={{marginBottom:20}}>📊 Meditation Progress</h3>
+
 <div style={{
-width: "100%",
-display: "flex",
-justifyContent: "center",
-marginTop: "20px"
+display:"flex",
+justifyContent:"space-between",
+marginBottom:15
+}}>
+<span>Total Sessions</span>
+<strong>{sessions.length}</strong>
+</div>
+
+<div style={{
+display:"flex",
+justifyContent:"space-between",
+marginBottom:15
+}}>
+<span>Total Minutes</span>
+<strong>{total}</strong>
+</div>
+
+<div style={{
+display:"flex",
+justifyContent:"space-between",
+marginBottom:15
+}}>
+<span>Average Duration</span>
+<strong>{avg} mins</strong>
+</div>
+
+{/* Progress Bar */}
+
+<div style={{
+background:"#e2e8f0",
+height:12,
+borderRadius:10,
+overflow:"hidden",
+marginTop:20
 }}>
 
-<LineChart
-width={500}
-height={300}
-data={data}
-
->
-
-<CartesianGrid strokeDasharray="3 3" />
-<XAxis dataKey="date" />
-<YAxis />
-<Tooltip />
-<Line
-type="monotone"
-dataKey="duration"
-stroke="#ec4899"
-strokeWidth={3}
-/>
-
-</LineChart>
+<div style={{
+width: `${Math.min(total,100)}%`,
+height:"100%",
+background:"linear-gradient(90deg,#7c3aed,#a78bfa)"
+}}/>
 
 </div>
+
+</div>
+
 );
 }

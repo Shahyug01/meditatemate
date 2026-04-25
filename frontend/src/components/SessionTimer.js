@@ -1,113 +1,86 @@
 import { useState, useEffect, useRef } from "react";
-import confetti from "canvas-confetti";
 
-export default function SessionTimer({ minutes, onComplete }){
+export default function SessionTimer({ onComplete }) {
+  const [duration, setDuration] = useState(5);
+  const [secondsLeft, setSecondsLeft] = useState(5 * 60);
+  const [running, setRunning] = useState(false);
 
-const [time,setTime]=useState(minutes * 60);
-const [running,setRunning]=useState(false);
+  const intervalRef = useRef(null);
+  const audioRef = useRef(new Audio("/bell.mp3"));
 
-const audioRef = useRef(null);
-const startedRef = useRef(false);
+  useEffect(() => {
+    setSecondsLeft(duration * 60);
+    setRunning(false);
+    clearInterval(intervalRef.current);
+  }, [duration]);
 
-useEffect(()=>{
-setTime(minutes * 60);
-},[minutes]);
+  useEffect(() => {
+    if (!running) return;
 
-/* START MUSIC ONLY ONCE */
+    intervalRef.current = setInterval(() => {
+      setSecondsLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(intervalRef.current);
 
-useEffect(()=>{
+          audioRef.current.currentTime = 0;
+          audioRef.current.play().catch(() => {});
 
-if(running && !startedRef.current){
+          setRunning(false);
+          onComplete && onComplete();
 
-startedRef.current = true;
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
 
-if(audioRef.current){
-audioRef.current.volume = 0.5;
-audioRef.current.play().catch(()=>{});
-}
+    return () => clearInterval(intervalRef.current);
+  }, [running]);
 
-}
+  const minutesDisplay = Math.floor(secondsLeft / 60);
+  const secondsDisplay = secondsLeft % 60;
 
-},[running]);
+  return (
+    <div className="session-container">
+      <h2 className="timer-title">Select Duration</h2>
 
-/* TIMER LOGIC */
+      {/* Duration */}
+      <select
+        value={duration}
+        onChange={(e) => setDuration(Number(e.target.value))}
+        className="duration-input"
+      >
+        <option value={1}>1 min</option>
+        <option value={3}>3 min</option>
+        <option value={5}>5 min</option>
+        <option value={10}>10 min</option>
+        <option value={15}>15 min</option>
+      </select>
 
-useEffect(()=>{
+      {/* Timer */}
+      <div className={`timer-circle ${running ? "pulse" : ""}`}>
+        {minutesDisplay}:{secondsDisplay.toString().padStart(2, "0")}
+      </div>
 
-if(!running) return;
+      {/* Buttons */}
+      <div className="timer-buttons">
+        <button
+          onClick={() => setRunning(!running)}
+          className="primary-btn"
+        >
+          {running ? "Pause" : "Start"}
+        </button>
 
-const interval = setInterval(()=>{
-setTime(prev => prev - 1);
-},1000);
-
-return ()=>clearInterval(interval);
-
-},[running]);
-
-/* COMPLETION LOGIC */
-
-useEffect(()=>{
-
-if(time === 0 && running){
-
-setRunning(false);
-startedRef.current = false;
-
-/* STOP MUSIC */
-
-if(audioRef.current){
-audioRef.current.pause();
-audioRef.current.currentTime = 0;
-}
-
-/* 🔔 BELL */
-
-const bell = new Audio("/bell.mp3");
-bell.play();
-
-/* 🎉 CONFETTI */
-
-confetti({
-particleCount:150,
-spread:90,
-origin:{y:0.6}
-});
-
-if(onComplete){
-onComplete();
-}
-
-alert("Meditation Completed 🧘");
-
-}
-
-},[time,running,onComplete]);
-
-const minutesDisplay = Math.floor(time / 60);
-const secondsDisplay = time % 60;
-
-return(
-
-<div style={{textAlign:"center"}}>
-
-<audio ref={audioRef} loop>
-<source src="/forest.mp3" type="audio/mpeg"/>
-</audio>
-
-<div className="timer-circle">
-{minutesDisplay}:{secondsDisplay < 10 ? "0" : ""}{secondsDisplay}
-</div>
-
-<button
-className="btn"
-onClick={()=>setRunning(true)}
-style={{marginTop:"20px"}}
-
->
-
-Start Meditation </button>
-
-</div>
-
-);
+        <button
+          onClick={() => {
+            setRunning(false);
+            setSecondsLeft(duration * 60);
+          }}
+          className="secondary-btn"
+        >
+          Reset
+        </button>
+      </div>
+    </div>
+  );
 }

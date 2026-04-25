@@ -46,7 +46,7 @@ onChange={e=>setMood(e.target.value)}
 
 </select>
 
-<button className="btn" onClick={generateSuggestion}>
+<button className="primary-btn" onClick={generateSuggestion}>
 Get Suggestion
 </button>
 

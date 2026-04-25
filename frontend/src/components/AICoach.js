@@ -62,7 +62,7 @@ value={msg}
 onChange={e=>setMsg(e.target.value)}
 />
 
-<button className="btn" onClick={sendMessage}>
+<button className="primary-btn" onClick={sendMessage}>
 Send
 </button>
 

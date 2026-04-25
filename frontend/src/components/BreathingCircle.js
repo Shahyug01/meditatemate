@@ -1,58 +1,82 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
-export default function BreathingCircle(){
+export default function BreathingCircle() {
+  const [phase, setPhase] = useState("Inhale");
+  const [scale, setScale] = useState(1);
+  const [glow, setGlow] = useState(false);
+  const [running, setRunning] = useState(false);
 
-const [phase,setPhase] = useState("Inhale");
-const [scale,setScale] = useState(1);
+  const timeoutRef = useRef(null);
+  const bellRef = useRef(new Audio("/bell.mp3"));
 
-useEffect(()=>{
+  const playBell = () => {
+    const bell = bellRef.current;
+    bell.currentTime = 0;
+    bell.volume = 0.2;
+    bell.play().catch(() => {});
+  };
 
-const interval = setInterval(()=>{
+  const startBreathing = () => {
+    if (running) return;
 
-setPhase(prev => prev === "Inhale" ? "Exhale" : "Inhale");
+    setRunning(true);
 
-setScale(prev => prev === 1 ? 1.5 : 1);
+    const runCycle = () => {
+      setPhase("Inhale");
+      setScale(1.3);
+      setGlow(true);
+      playBell();
 
-},4000);
+      timeoutRef.current = setTimeout(() => {
+        setPhase("Exhale");
+        setScale(1);
+        setGlow(false);
+        playBell();
 
-return ()=>clearInterval(interval);
+        timeoutRef.current = setTimeout(runCycle, 4000);
+      }, 4000);
+    };
 
-},[]);
+    runCycle();
+  };
 
-return(
+  const stopBreathing = () => {
+    setRunning(false);
+    clearTimeout(timeoutRef.current);
+    timeoutRef.current = null;
 
-<div style={{textAlign:"center"}}>
+    setScale(1);
+    setGlow(false);
+    setPhase("Inhale");
+  };
 
-<h3 style={{marginBottom:"20px"}}>Guided Breathing</h3>
+  useEffect(() => {
+    return () => clearTimeout(timeoutRef.current);
+  }, []);
 
-<div
-style={{
-width:"220px",
-height:"220px",
-margin:"auto",
-borderRadius:"50%",
-background:"linear-gradient(45deg,#7c3aed,#ec4899)",
-display:"flex",
-alignItems:"center",
-justifyContent:"center",
-fontSize:"28px",
-fontWeight:"bold",
-color:"white",
-transition:"all 4s ease-in-out",
-transform:`scale(${scale})`,
-boxShadow:"0 30px 80px rgba(0,0,0,0.9)"
-}}
->
+  return (
+    <div className="session-container">
+      <h2 className="timer-title">Guided Breathing</h2>
 
-{phase}
+      <div
+        className={`breathing-circle ${glow ? "glow" : ""}`}
+        style={{ transform: `scale(${scale})` }}
+      >
+        <div className="energy-ring"></div>
+        <span className="breath-text">{phase}</span>
+      </div>
 
-</div>
+      <p className="breathing-sub">Follow the circle — breathe slowly</p>
 
-<p style={{marginTop:"20px",opacity:0.8}}>
-Follow the circle — breathe slowly
-</p>
+      <div className="timer-buttons">
+        <button onClick={startBreathing} className="primary-btn">
+          Start
+        </button>
 
-</div>
-
-);
+        <button onClick={stopBreathing} className="secondary-btn">
+          Stop
+        </button>
+      </div>
+    </div>
+  );
 }

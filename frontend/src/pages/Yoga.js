@@ -92,7 +92,7 @@ allowFullScreen
 
 </div>
 
-<button className="btn" onClick={()=>navigate("/dashboard")}>
+<button className="primary-btn" onClick={()=>navigate("/dashboard")}>
 Back to Dashboard </button>
 
 </div>
