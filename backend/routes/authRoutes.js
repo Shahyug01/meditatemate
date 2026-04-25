@@ -1,62 +1,114 @@
-const router = require("express").Router();
-const User = require("../models/User");
+const express = require("express");
+const router = express.Router();
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
-router.post("/register", async (req,res)=>{
-  try{
+const User = require("../models/User");
 
-    console.log(req.body);   // debugging line
+/* ===== REGISTER ===== */
+router.post("/register", async (req, res) => {
+  try {
+    console.log("Register route hit ✅");
 
-    const {name,email,password} = req.body;
+    const { name, email, password } = req.body;
 
-    if(!name || !email || !password){
-      return res.status(400).json("All fields required");
+    if (!name || !email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "All fields are required"
+      });
     }
 
-    const exist = await User.findOne({email});
-    if(exist){
-      return res.status(400).json("User already exists");
+    const existingUser = await User.findOne({ email });
+
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: "User already exists"
+      });
     }
 
-    const hash = await bcrypt.hash(password,10);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = await User.create({
+    const user = new User({
       name,
       email,
-      password:hash
+      password: hashedPassword
     });
 
-    res.json(user);
+    await user.save();
 
-  }catch(err){
-    console.log("REGISTER ERROR:",err);
-    res.status(500).json("Register Server Error");
+    return res.status(201).json({
+      success: true,
+      message: "User registered successfully"
+    });
+
+  } catch (err) {
+    console.log("REGISTER ERROR ❌:", err.message);
+
+    return res.status(500).json({
+      success: false,
+      message: "Server error"
+    });
   }
 });
 
-router.post("/login", async (req,res)=>{
-  try{
+/* ===== LOGIN ===== */
+router.post("/login", async (req, res) => {
+  try {
+    console.log("Login route hit ✅");
 
-    const {email,password} = req.body;
+    const { email, password } = req.body;
 
-    const user = await User.findOne({email});
-    if(!user) return res.status(400).json("User not found");
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and password required"
+      });
+    }
 
-    const match = await bcrypt.compare(password,user.password);
-    if(!match) return res.status(400).json("Wrong Password");
+    const user = await User.findOne({ email });
 
-    const token = jwt.sign({id:user._id},process.env.JWT_SECRET);
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "User not found"
+      });
+    }
 
-    res.json({
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: "Incorrect password"
+      });
+    }
+
+    const token = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Login successful",
       token,
-      userId:user._id,
-      name:user.name
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email
+      }
     });
 
-  }catch(err){
-    console.log("LOGIN ERROR:",err);
-    res.status(500).json("Login Server Error");
+  } catch (err) {
+    console.log("LOGIN ERROR ❌:", err.message);
+
+    return res.status(500).json({
+      success: false,
+      message: "Server error"
+    });
   }
 });
 
